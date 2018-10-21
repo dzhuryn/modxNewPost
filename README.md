@@ -14,7 +14,7 @@
 2. В форму добавить следующие поля:
 
     ```html
-    <input type="te" id="cityName" name="cityName">
+    <input type="hidden" id="cityName" name="cityName">
     <input type="hidden" id="departmentName" name="departmentName">
     <select name="city" id="new-post-city">
         <option value="0">Выберите город</option>
