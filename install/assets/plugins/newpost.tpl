@@ -31,7 +31,8 @@ switch ($e->name){
         switch ($_GET['q']) {
             case 'newPost-update':
                 $newPost->update($start);
-                break;
+                echo 'Список обновлено';
+                die();
             case 'newPost-getDepartments':
                 echo $newPost->getDepartments($_GET['city_ref'],$_GET['lang']);
                 die();

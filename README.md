@@ -9,13 +9,12 @@
 1. Для начала необходимо подключить css и js от select2
     ```html
     <link rel="stylesheet" href="/assets/lib/select2/css/select2.min.css">
-    <script src="assets/js/jquery.min.js"></script>
     <script src="/assets/lib/select2/js/select2.min.js"></script>
     ```
 2. В форму добавить следующие поля:
 
     ```html
-    <input type="hidden" id="cityName" name="cityName">
+    <input type="te" id="cityName" name="cityName">
     <input type="hidden" id="departmentName" name="departmentName">
     <select name="city" id="new-post-city">
         <option value="0">Выберите город</option>
@@ -31,63 +30,64 @@
 
 3. Добавить следующий javascript код.
 ```javascript
-$(document).ready(function() {
-     var newPostDepartmentObj = $('#new-post-department');
+   $(document).ready(function() {
+        var newPostDepartmentObj = $('#new-post-department');
 
-     var lang = 'ua';
-     var suffix =  lang === 'ua'?'':'_ru';
+        var lang = 'ua';
+        var suffix =  lang === 'ua'?'':'_ru';
 
-     var cityIdKey = 'city_ref';
-     var cityNameKey = 'city'+suffix;
+        var cityIdKey = 'city_ref';
+        var cityNameKey = 'city'+suffix;
 
-     var citySelect2Obj = $('#new-post-city').select2({
-         ajax: {
-             url: "/newPost-getCities",
-             dataType: 'json',
-             delay: 250,
-             minimumInputLength: 1,
-             data: function (params) {
-                 return {
-                     query: params.term,
-                     lang:lang
-                 };
-             },
-             processResults: function (data, params) {
-                 var newData = $.map(data.results, function(item, index){
-                     item.id = item[cityIdKey];
-                     item.text = item[cityNameKey];
-                     return item;
-                 });
-                 return {
-                     results: newData
-                 };
-             }
-         }
-     });
-     var departmentSelect = newPostDepartmentObj.select2();
+        var citySelect2Obj = $('#new-post-city').select2({
+            ajax: {
+                url: "/newPost-getCities",
+                dataType: 'json',
+                delay: 250,
+                minimumInputLength: 1,
+                data: function (params) {
+                    return {
+                        query: params.term,
+                        lang:lang
+                    };
+                },
+                processResults: function (data, params) {
+                    var newData = $.map(data.results, function(item, index){
+                        item.id = item[cityIdKey];
+                        item.text = item[cityNameKey];
+                        return item;
+                    });
+                    return {
+                        results: newData
+                    };
+                }
+            }
+        });
+        var departmentSelect = newPostDepartmentObj.select2();
 
-     citySelect2Obj.on("select2:select", function (e) {
-         $('#cityName').val(e.params.data[cityNameKey]);
-         $('#departmentName').val('');
-         departmentSelect.html('')
+        citySelect2Obj.on("select2:select", function (e) {
+            $('#cityName').val(e.params.data[cityNameKey]);
+            $('#departmentName').val('');
+            departmentSelect.html('')
 
-         var cityRef = e.params.data[cityIdKey];
-         $.get('/newPost-getDepartments',{
-             city_ref:cityRef,
-             lang:lang
-         },function (data) {
-             data = JSON.parse(data);
-             $.map(data.results, function(item, index){
-                 var option = new Option(item['title'], item['ref'], false, false);
-                 departmentSelect.append(option).trigger('change');
-             });
-         });
-     });
-     departmentSelect.on("select2:select", function (e) {
-         $('#departmentName').val(e.params.data['text']);
-     })
-     
- });
+            var cityRef = e.params.data[cityIdKey];
+            $.get('/newPost-getDepartments',{
+                city_ref:cityRef,
+                lang:lang
+            },function (data) {
+                data = JSON.parse(data);
+
+                departmentSelect.append(new Option("Выберите отделение", "0", false, false)).trigger('change');
+                $.map(data.results, function(item, index){
+                    var option = new Option(item['title'], item['ref'], false, false);
+                    departmentSelect.append(option).trigger('change');
+                });
+            });
+        });
+        departmentSelect.on("select2:select", function (e) {
+            $('#departmentName').val(e.params.data['text']);
+        })
+    });
 ```
 После начала ввода названия города отправляется запрос по урл `newPost-getCities` из вводом пользователя и языком.
 После получения ответа получаем список городов.  
