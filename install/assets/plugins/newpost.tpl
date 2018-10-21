@@ -16,22 +16,18 @@ $e = $modx->event;
 require_once MODX_BASE_PATH.'assets/snippets/newPost/newPost.php';
 $newPost = new newPost($modx);
 $start = microtime(true);
-
-
 switch ($e->name){
     case 'OnWebPageInit':
         if(empty($_SESSION['mgrShortname'])){ return ;  }
         $lastUpdateDateFile = MODX_BASE_PATH.'assets/snippets/newPost/date.txt';
         $date = date('d-m-Y');
         $lastUpdateDate = file_get_contents($lastUpdateDateFile);
-
         if($lastUpdateDate != $date){
             $newPost->update($start);
             file_put_contents($lastUpdateDateFile,$date);
         }
         break;
     case 'OnPageNotFound':
-
         switch ($_GET['q']) {
             case 'newPost-update':
                 $newPost->update($start);

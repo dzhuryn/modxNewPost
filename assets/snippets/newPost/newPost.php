@@ -77,41 +77,42 @@ class newPost
         $cityNameEscape = $this->modx->db->escape($cityName);
         $cityNameKey = $lang == 'ua'?'city':'city_ru';
 
-        $q = $this->modx->db->select('*',$this->citiesTable,'`'.$cityNameKey.'` like "%'.$cityNameEscape.'%"','city  COLLATE  utf8_unicode_ci','40');
-        $cities = $this->modx->db->makeArray($q);
+        $where = '';
+        $notIds = [];
+        //для начала полное вхождение
+        $q = $this->modx->db->select('*',$this->citiesTable,'`'.$cityNameKey.'` = "'.$cityNameEscape.'"','city  COLLATE  utf8_unicode_ci','40');
+        $full = $this->modx->db->makeArray($q,'id');
+
+        $notIds = array_column($full,'id');
+        if(!empty($notIds)) $where = ' and id not in ('.implode(',',$notIds).')';
+
+        //для частичное вхождение
+        $q = $this->modx->db->select('*',$this->citiesTable,'`'.$cityNameKey.'` like "'.$cityNameEscape.'%"'.$where,'city  COLLATE  utf8_unicode_ci','40');
+        $part = $this->modx->db->makeArray($q,'id');
+
+        $notIds = array_merge($notIds,array_column($part,'id'));
+        if(!empty($notIds))$where = ' and id not in ('.implode(',',$notIds).')';
+
+        //like
+        $q = $this->modx->db->select('*',$this->citiesTable,'`'.$cityNameKey.'` like "%'.$cityNameEscape.'%"'.$where,'city  COLLATE  utf8_unicode_ci','40');
+        $like = $this->modx->db->makeArray($q,'id');
+
+        $cities = array_merge($full,$part,$like);
         return json_encode(['results'=>$cities],JSON_UNESCAPED_UNICODE);
     }
+
 
     public function getDepartments($cityRef,$lang)
     {
         $cityRefEscape = $this->modx->db->escape($cityRef);
-        $addressKey = $lang=='ua'?'address':'address_ru';
+
 
         $q = $this->modx->db->select('*',$this->departmentTable,'city_ref = "'.$cityRefEscape.'"','num asc');
         $res = $this->modx->db->makeArray($q);
+
         $data = [];
         foreach ($res as $department) {
-
-
-            switch ($department['warehouse_type']) {
-                case 'mini':
-                    $desc = $lang == 'ua' ? 'Поштомат' : 'Почтомат';
-                    break;
-                case 'post':
-                case 'cargo':
-                    $desc = $lang == 'ua' ? 'Відділення' : 'Отделение';
-                    break;
-                case 'postomat':
-                    $desc = $lang == 'ua' ? 'Поштомат приватбанку' : 'Почтомат приватбанка';
-                    break;
-            }
-
-            $departmentName = $desc . ' №' . $department['num'];
-            if (!empty($department['max_weight_allowed'])) {
-                $departmentName .= ' (до ' . $department['max_weight_allowed'] . ' кг)';
-            }
-            $departmentName .= ', ' . $department[$addressKey];
-            $department['title'] = $departmentName;
+            $department['title'] = $this->getDepartmentName($department,$lang);
             $data[] = $department;
 
         }
@@ -129,5 +130,29 @@ class newPost
         $this->modx->logEvent(121,1,'Список отделений и городов новой почты обновлен.<br>Дата: '.date('d-m-Y H:i').'<br>Время выполнения скрипта: '.round(microtime(true) - $start, 4).' сек.','newPostUpdate');
         }
 
+    }
+
+    private function getDepartmentName($department, $lang)
+    {
+        $addressKey = $lang=='ua'?'address':'address_ru';
+        switch ($department['warehouse_type']) {
+            case 'mini':
+                $desc = $lang == 'ua' ? 'Поштомат' : 'Почтомат';
+                break;
+            case 'post':
+            case 'cargo':
+                $desc = $lang == 'ua' ? 'Відділення' : 'Отделение';
+                break;
+            case 'postomat':
+                $desc = $lang == 'ua' ? 'Поштомат приватбанку' : 'Почтомат приватбанка';
+                break;
+        }
+
+        $departmentName = $desc . ' №' . $department['num'];
+        if (!empty($department['max_weight_allowed'])) {
+            $departmentName .= ' (до ' . $department['max_weight_allowed'] . ' кг)';
+        }
+        $departmentName .= ', ' . $department[$addressKey];
+        return $departmentName;
     }
 }
